@@ -10,16 +10,15 @@ from hardware import Hardware
 import serial.tools.list_ports
 
 # -----------------------------------------------------------------------------
-hw = None
 MINIMUM_WIDTH = 230
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 class UIClass(QtGui.QMainWindow):
+    hw = None
     comboBox = None
     availablePorts = None
     port = None
-
     # -------------------------------------------------------------------------
     def __init__(self):
 
@@ -54,7 +53,8 @@ class UIClass(QtGui.QMainWindow):
         pixmap = QtGui.QPixmap('logo.png')
         label.setPixmap(pixmap)
         logoGBoxLayout.addWidget(label)
-                # ---------------------------------------------------------------------
+
+        # ---------------------------------------------------------------------
         #
         # ---------------------------------------------------------------------
         serialGBox = QtGui.QGroupBox("Serial port")
@@ -212,7 +212,7 @@ class UIClass(QtGui.QMainWindow):
         # ---------------------------------------------------------------------
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.PeriodicFunc)
-        self.timer.start(33)
+        # Timer will be initiated via serial comm startup 
 
     # -------------------------------------------------------------------------
     def updateValIncrements(self):
@@ -222,16 +222,18 @@ class UIClass(QtGui.QMainWindow):
 
         arg = [val0_inc, val1_inc, val2_inc]
 
-        hw.incrementValueSet(arg)
+        self.hw.incrementValueSet(arg)
 
     # -------------------------------------------------------------------------
     def resetGraphButtonAction(self):
-        hw.resetBuffers()
+        self.hw.resetBuffers()
 
     # -------------------------------------------------------------------------
     def connectGraphButtonAction(self):
         # Initialise hardware device
-        print(self.port)
+        self.hw = Hardware(self.port)
+
+        self.timer.start(33)
 
     # -------------------------------------------------------------------------
     def comboBoxValueChangedAction(self):
@@ -241,13 +243,13 @@ class UIClass(QtGui.QMainWindow):
         
     # -------------------------------------------------------------------------
     def PeriodicFunc(self):
-        [time, val0, val1, val2] = hw.getReadout()
+        [time, val0, val1, val2] = self.hw.getReadout()
         if(time != None):
             self.val0_label.setText(str(val0))
             self.val1_label.setText(str(val1))
             self.val2_label.setText(str(val2))
 
-        [time_array, val0_array, val1_array, val2_array] = hw.getArrays()
+        [time_array, val0_array, val1_array, val2_array] = self.hw.getArrays()
         if(len(time_array) > 0):
             self.plot1_curve1.setData(x=time_array, y=val0_array)
             self.plot2_curve1.setData(x=time_array, y=val1_array)
@@ -260,18 +262,15 @@ class UIClass(QtGui.QMainWindow):
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
+    # HW Initialization carried to the button event.
+    #hw = Hardware("")
+    
+    # Initialise GUI
+    app = QtGui.QApplication(sys.argv)
+    window = UIClass()
+    window.show()
 
-    if(len(sys.argv) < 2):
-        print("What is the port address?")
+    # Set initial port selection as default 
+    port = window.availablePorts[0].device
 
-    else:
-        print("Serial port name " + sys.argv[1])
-
-        # Initalise hwrdware device
-        hw = Hardware(sys.argv[1])
-
-        # Initialise GUI
-        app = QtGui.QApplication(sys.argv)
-        window = UIClass()
-        window.show()
-        sys.exit(app.exec_())
+    sys.exit(app.exec_())
