@@ -15,7 +15,7 @@ MINIMUM_WIDTH = 230
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 class UIClass(QtGui.QMainWindow):
-
+    comboBox = None
     # -------------------------------------------------------------------------
     def __init__(self):
 
@@ -50,6 +50,22 @@ class UIClass(QtGui.QMainWindow):
         pixmap = QtGui.QPixmap('logo.png')
         label.setPixmap(pixmap)
         logoGBoxLayout.addWidget(label)
+                # ---------------------------------------------------------------------
+        #
+        # ---------------------------------------------------------------------
+        serialGBox = QtGui.QGroupBox("Serial port")
+        serialGBoxLayout = QtGui.QGridLayout()
+        serialGBox.setLayout(serialGBoxLayout)
+        serialGBox.setMinimumWidth(MINIMUM_WIDTH)
+        serialGBox.setMaximumWidth(MINIMUM_WIDTH)
+        # ---------------------------------------------------------------------
+        self.comboBox = QtGui.QComboBox(self)
+        serialGBoxLayout.addWidget(QtGui.QLabel("Select Port:"),0,0)
+        serialGBoxLayout.addWidget(self.comboBox)
+        connectGraphButton = QtGui.QPushButton("Connect")
+        serialGBoxLayout.addWidget(connectGraphButton,3,0,1,8)
+        connectGraphButton.clicked.connect(self.connectGraphButtonAction)
+        self.comboBox.currentIndexChanged.connect(self.comboBoxValueChangedAction)
 
         # ---------------------------------------------------------------------
         #
@@ -120,6 +136,7 @@ class UIClass(QtGui.QMainWindow):
         #
         # ---------------------------------------------------------------------
         vbox_ui.addWidget(logoGBox)
+        vbox_ui.addWidget(serialGBox)
         vbox_ui.addWidget(infoGBox)
         vbox_ui.addWidget(valIncControlGBox)
         vbox_ui.addStretch(1)
@@ -200,6 +217,12 @@ class UIClass(QtGui.QMainWindow):
     def resetGraphButtonAction(self):
         hw.resetBuffers()
 
+    # -------------------------------------------------------------------------
+    def connectGraphButtonAction(self):
+        print("Connect button signal")
+    # -------------------------------------------------------------------------
+    def comboBoxValueChangedAction(self):
+        print("CB change signal")
     # -------------------------------------------------------------------------
     def PeriodicFunc(self):
         [time, val0, val1, val2] = hw.getReadout()
