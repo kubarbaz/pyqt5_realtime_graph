@@ -7,6 +7,7 @@ import pyqtgraph as pg
 from pyqtgraph.ptime import time
 from pyqtgraph.Qt import QtCore, QtGui
 from hardware import Hardware
+import serial.tools.list_ports
 
 # -----------------------------------------------------------------------------
 hw = None
@@ -16,6 +17,9 @@ MINIMUM_WIDTH = 230
 # -----------------------------------------------------------------------------
 class UIClass(QtGui.QMainWindow):
     comboBox = None
+    availablePorts = None
+    port = None
+
     # -------------------------------------------------------------------------
     def __init__(self):
 
@@ -60,6 +64,13 @@ class UIClass(QtGui.QMainWindow):
         serialGBox.setMaximumWidth(MINIMUM_WIDTH)
         # ---------------------------------------------------------------------
         self.comboBox = QtGui.QComboBox(self)
+        # Get available ports from OS
+        self.availablePorts = [comport for comport in serial.tools.list_ports.comports()]
+        
+        # Fill comboBox with acquired info
+        for ports in self.availablePorts:
+            self.comboBox.addItem(ports.description)
+
         serialGBoxLayout.addWidget(QtGui.QLabel("Select Port:"),0,0)
         serialGBoxLayout.addWidget(self.comboBox)
         connectGraphButton = QtGui.QPushButton("Connect")
@@ -219,10 +230,15 @@ class UIClass(QtGui.QMainWindow):
 
     # -------------------------------------------------------------------------
     def connectGraphButtonAction(self):
-        print("Connect button signal")
+        # Initialise hardware device
+        print(self.port)
+
     # -------------------------------------------------------------------------
     def comboBoxValueChangedAction(self):
-        print("CB change signal")
+        for selectedPort in self.availablePorts:
+            if selectedPort.description == self.comboBox.currentText():
+                    self.port = selectedPort.device
+        
     # -------------------------------------------------------------------------
     def PeriodicFunc(self):
         [time, val0, val1, val2] = hw.getReadout()
