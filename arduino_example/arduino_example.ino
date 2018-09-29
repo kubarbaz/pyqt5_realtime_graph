@@ -1,7 +1,13 @@
+
 // ----------------------------------------------------------------------------
 //
 //
 // ----------------------------------------------------------------------------
+/******************************************************************************
+If you are using Arduino Due(ARM) instead of Uno(AVR), uncomment next line and 
+comment out the line after that one. Same proc is needed for all starred lines.
+******************************************************************************/
+//#include <DueTimer.h>
 #include <TimerOne.h>
 #include <stdbool.h>
 
@@ -44,10 +50,10 @@ void testVal_init()
 void timer_tick()
 {
   // Packet timeout handler
-  if(m_msgTimeoutCnt_ms > 0)
+  if (m_msgTimeoutCnt_ms > 0)
   {
     m_msgTimeoutCnt_ms -= 1;
-    if(m_msgTimeoutCnt_ms == 0)
+    if (m_msgTimeoutCnt_ms == 0)
     {
       comHandler_reset();
     }
@@ -62,6 +68,10 @@ void timer_tick()
 // ----------------------------------------------------------------------------
 void timer_init()
 {
+  /**************************************************************/
+  //Timer1.getAvailable().attachInterrupt(timer_tick).start(1000);
+
+  //Comment out those two lines if you are using Due
   Timer1.initialize(1 * 1000);
   Timer1.attachInterrupt(timer_tick);
 }
@@ -82,7 +92,7 @@ void uart_sendch(uint8_t ch)
 void comHandler_init()
 {
   uint8_t i = 0;
-  for(i=0;i<MSG_MAX_LEN;i++)
+  for (i = 0; i < MSG_MAX_LEN; i++)
   {
     m_packetBuffer[i] = 0;
   }
@@ -99,12 +109,12 @@ void comHandler_reset()
 // ----------------------------------------------------------------------------
 void serialEvent()
 {
-  while(Serial.available())
+  while (Serial.available())
   {
     // Read the msg
     volatile uint8_t ch = Serial.read();
 
-    if(m_newMessage == true)
+    if (m_newMessage == true)
     {
       // ...
     }
@@ -113,13 +123,13 @@ void serialEvent()
       m_packetBuffer[m_packetBufferInd] = ch;
       m_packetBufferInd = m_packetBufferInd + 1;
 
-      if(m_packetBufferInd > MSG_MAX_LEN)
+      if (m_packetBufferInd > MSG_MAX_LEN)
       {
         // Protect from buffer overflow
         m_packetBufferInd = 0;
         m_newMessage = false;
       }
-      else if(m_packetBufferInd == m_packetBuffer[0])
+      else if (m_packetBufferInd == m_packetBuffer[0])
       {
         // Signal the main method for new message
         m_packetBufferInd = 0;
@@ -134,13 +144,15 @@ void serialEvent()
 }
 
 // ----------------------------------------------------------------------------
-uint32_t make32b(uint8_t* buff, int32_t offset)
+/********************************************************/
+//uint32_t make32b(volatile uint8_t* buff, int32_t offset)
+uint32_t make32b( uint8_t* buff, int32_t offset)
 {
   uint32_t rv = 0;
-  rv += buff[offset+0] <<  0;
-  rv += buff[offset+1] <<  8;
-  rv += buff[offset+2] << 16;
-  rv += buff[offset+3] << 24;
+  rv += buff[offset + 0] <<  0;
+  rv += buff[offset + 1] <<  8;
+  rv += buff[offset + 2] << 16;
+  rv += buff[offset + 3] << 24;
   return rv;
 }
 
@@ -162,37 +174,37 @@ void put32b(uint32_t val)
 // ----------------------------------------------------------------------------
 void comHandler_handlePacket()
 {
-  switch(m_packetBuffer[1])
+  switch (m_packetBuffer[1])
   {
     // ------------------------------------------------------------------------
     // Test response
     case 0:
-    {
-      uint8_t i = 0;
-      for(i=0;i<10;i++)
       {
-        uart_sendch(i);
+        uint8_t i = 0;
+        for (i = 0; i < 10; i++)
+        {
+          uart_sendch(i);
+        }
+        break;
       }
-      break;
-    }
     // ------------------------------------------------------------------------
     // Send values of test signals
     case 1:
-    {
-      put32b(testVal0);
-      put32b(testVal1);
-      put32b(testVal2);
-      break;
-    }
+      {
+        put32b(testVal0);
+        put32b(testVal1);
+        put32b(testVal2);
+        break;
+      }
     // ------------------------------------------------------------------------
     // Get increment values for test signals
     case 2:
-    {
-      testVal0_inc = make32b(m_packetBuffer, 2);
-      testVal1_inc = make32b(m_packetBuffer, 6);
-      testVal2_inc = make32b(m_packetBuffer, 10);
-      break;
-    }
+      {
+        testVal0_inc = make32b(m_packetBuffer, 2);
+        testVal1_inc = make32b(m_packetBuffer, 6);
+        testVal2_inc = make32b(m_packetBuffer, 10);
+        break;
+      }
   }
 }
 
@@ -209,7 +221,7 @@ void setup()
 void loop()
 {
   // Check for command message
-  if(m_newMessage)
+  if (m_newMessage)
   {
     comHandler_handlePacket();
     m_newMessage = false;
